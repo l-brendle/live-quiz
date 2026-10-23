@@ -5,12 +5,12 @@ import type { Language } from "./quiz";
 
 const en = {
   question: (i: number, n: number) => `Question ${i} / ${n}`,
-  pin: "Code",
+  pin: "PIN",
   noRedis:
     "No Redis configured: game state lives in memory. Fine for local testing, but on Vercel connect Upstash Redis (see README).",
   connectionProblem: (msg: string) => `Connection problem: ${msg}. Retrying…`,
   scanToJoin: "Scan to join or go to",
-  gamePin: "Game code",
+  gamePin: "Game PIN",
   waitingForPlayers: "Waiting for players…",
   playerCount: (n: number) => (n === 1 ? "1 player" : `${n} players`),
   start: "Start",
@@ -69,12 +69,12 @@ export type Messages = typeof en;
 
 const de: Messages = {
   question: (i, n) => `Frage ${i} / ${n}`,
-  pin: "Code",
+  pin: "PIN",
   noRedis:
     "Kein Redis konfiguriert: Der Spielstand liegt im Arbeitsspeicher. Lokal ok, auf Vercel bitte Upstash Redis verbinden (siehe README).",
   connectionProblem: (msg) => `Verbindungsproblem: ${msg}. Neuer Versuch…`,
   scanToJoin: "Scannen zum Mitspielen oder öffne",
-  gamePin: "Spielcode",
+  gamePin: "Spiel-PIN",
   waitingForPlayers: "Warte auf Spieler…",
   playerCount: (n) => (n === 1 ? "1 Spieler" : `${n} Spieler`),
   start: "Start",
@@ -130,12 +130,12 @@ const de: Messages = {
 
 const fr: Messages = {
   question: (i, n) => `Question ${i} / ${n}`,
-  pin: "Code",
+  pin: "PIN",
   noRedis:
     "Aucun Redis configuré : l'état du jeu est en mémoire. OK en local, mais sur Vercel connectez Upstash Redis (voir README).",
   connectionProblem: (msg) => `Problème de connexion : ${msg}. Nouvel essai…`,
   scanToJoin: "Scannez pour jouer ou allez sur",
-  gamePin: "Code du jeu",
+  gamePin: "PIN du jeu",
   waitingForPlayers: "En attente des joueurs…",
   playerCount: (n) => (n === 1 ? "1 joueur" : `${n} joueurs`),
   start: "Démarrer",
@@ -191,12 +191,12 @@ const fr: Messages = {
 
 const it: Messages = {
   question: (i, n) => `Domanda ${i} / ${n}`,
-  pin: "Codice",
+  pin: "PIN",
   noRedis:
     "Nessun Redis configurato: lo stato del gioco è in memoria. Va bene in locale, ma su Vercel collega Upstash Redis (vedi README).",
   connectionProblem: (msg) => `Problema di connessione: ${msg}. Nuovo tentativo…`,
   scanToJoin: "Scansiona per giocare o vai su",
-  gamePin: "Codice del gioco",
+  gamePin: "PIN del gioco",
   waitingForPlayers: "In attesa dei giocatori…",
   playerCount: (n) => (n === 1 ? "1 giocatore" : `${n} giocatori`),
   start: "Inizia",
@@ -252,12 +252,12 @@ const it: Messages = {
 
 const es: Messages = {
   question: (i, n) => `Pregunta ${i} / ${n}`,
-  pin: "Código",
+  pin: "PIN",
   noRedis:
     "Redis no configurado: el estado del juego está en memoria. Vale en local, pero en Vercel conecta Upstash Redis (ver README).",
   connectionProblem: (msg) => `Problema de conexión: ${msg}. Reintentando…`,
   scanToJoin: "Escanea para unirte o ve a",
-  gamePin: "Código del juego",
+  gamePin: "PIN del juego",
   waitingForPlayers: "Esperando jugadores…",
   playerCount: (n) => (n === 1 ? "1 jugador" : `${n} jugadores`),
   start: "Empezar",

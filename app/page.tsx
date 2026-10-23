@@ -23,11 +23,11 @@ export default function Home() {
           className="input input-big"
           inputMode="numeric"
           autoComplete="off"
-          placeholder="Game code"
+          placeholder="Game PIN"
           value={code}
           maxLength={7}
           onChange={(e) => setCode(e.target.value)}
-          aria-label="Game code"
+          aria-label="Game PIN"
         />
         <button className="btn btn-dark" disabled={clean.length !== 6}>
           Enter

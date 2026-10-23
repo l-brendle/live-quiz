@@ -10,7 +10,7 @@ A small live quiz for a room full of phones. The host writes the questions on th
 ## Hosting a game
 
 1. Open `/host`, write or paste your questions (an example is prefilled; your draft stays in the browser).
-2. Pick the game language (English, Deutsch, Français, Italiano or Español) and click **Create game**. The host game screen and the players' phones use that language, including the right-or-wrong buttons (e.g. Richtig / Falsch). Show the screen to the room: players scan the QR code or enter the game code on the start page.
+2. Pick the game language (English, Deutsch, Français, Italiano or Español) and click **Create game**. The host game screen and the players' phones use that language, including the right-or-wrong buttons (e.g. Richtig / Falsch). Show the screen to the room: players scan the QR code or enter the PIN on the start page.
 3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Players see whether they were right, and after 2 seconds the ranking, until you click **Next question**.
 
 The question config looks like this:
