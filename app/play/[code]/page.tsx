@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Countdown, OPTION_STYLES, Shape, Spinner, TRUE_FALSE_STYLES } from "@/components/ui";
+import { Badge, Countdown, OPTION_STYLES, Spinner, TRUE_FALSE_STYLES } from "@/components/ui";
 import { ApiError, api, playerIdKey, post, readStorage, usePoll, useServerNow, writeStorage } from "@/lib/client";
 import type { PlayerView } from "@/lib/game";
 import { type Messages, t } from "@/lib/i18n";
@@ -310,7 +310,7 @@ function Game({
                   style={{ background: OPTION_STYLES[i].color }}
                   onClick={() => answer(i)}
                 >
-                  <Shape shape={OPTION_STYLES[i].shape} size={36} />
+                  <Badge mark={OPTION_STYLES[i].mark} size={44} />
                   <span>{opt}</span>
                 </button>
               ))}
@@ -320,7 +320,7 @@ function Game({
             <div className="answer-grid answer-grid-2">
               {TRUE_FALSE_STYLES.map((s, i) => (
                 <button key={i} className="answer-btn" style={{ background: s.color }} onClick={() => answer(i === 0)}>
-                  <Shape shape={s.shape} size={36} />
+                  <Badge mark={s.mark} size={44} />
                   <span>{trueFalseLabel(i === 0, data.lang)}</span>
                 </button>
               ))}

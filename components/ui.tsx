@@ -3,52 +3,41 @@
 import type { CSSProperties, ReactNode } from "react";
 
 export const OPTION_STYLES = [
-  { color: "var(--red)", shape: "triangle" },
-  { color: "var(--blue)", shape: "diamond" },
-  { color: "var(--yellow)", shape: "circle" },
-  { color: "var(--green)", shape: "square" },
+  { color: "var(--opt-a)", mark: "star" },
+  { color: "var(--opt-b)", mark: "heart" },
+  { color: "var(--opt-c)", mark: "moon" },
+  { color: "var(--opt-d)", mark: "bolt" },
 ] as const;
 
 /** Styles for the two right-or-wrong buttons: [true, false]. */
 export const TRUE_FALSE_STYLES = [
-  { color: "var(--blue)", shape: "diamond" },
-  { color: "var(--red)", shape: "triangle" },
+  { color: "var(--opt-d)", mark: "check" },
+  { color: "var(--opt-b)", mark: "cross" },
 ] as const;
 
-export function Shape({ shape, size = 28 }: { shape: string; size?: number }) {
-  const s = { width: size, height: size, flex: "none" } as CSSProperties;
-  const fill = "#fff";
-  switch (shape) {
-    case "triangle":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <path d="M16 3 30 28H2z" fill={fill} />
-        </svg>
-      );
-    case "diamond":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <path d="M16 1 31 16 16 31 1 16z" fill={fill} />
-        </svg>
-      );
-    case "circle":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <circle cx="16" cy="16" r="14" fill={fill} />
-        </svg>
-      );
-    default:
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <rect x="3" y="3" width="26" height="26" fill={fill} />
-        </svg>
-      );
-  }
+const ICONS: Record<string, ReactNode> = {
+  star: <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />,
+  heart: <path d="M12 21s-7.5-4.6-9.6-9.2C1 8.6 3 5 6.6 5c2.1 0 3.5 1.1 4.4 2.5.9-1.4 2.3-2.5 4.4-2.5C19 5 21 8.6 19.6 11.8 17.5 16.4 12 21 12 21z" />,
+  moon: <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1z" />,
+  bolt: <path d="M13.5 2 4.5 13.5h6L9.5 22l9-11.5h-6z" />,
+  check: <path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />,
+  cross: <path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" />,
+};
+
+/** Round badge with the option's symbol, shown on answer tiles. */
+export function Badge({ mark, size = 40 }: { mark: string; size?: number }) {
+  return (
+    <span className="badge" style={{ width: size, height: size } as CSSProperties} aria-hidden>
+      <svg viewBox="0 0 24 24" width={size * 0.55} height={size * 0.55} fill="currentColor">
+        {ICONS[mark]}
+      </svg>
+    </span>
+  );
 }
 
 export function Tile({
   color,
-  shape,
+  mark,
   children,
   dim,
   correct,
@@ -57,7 +46,7 @@ export function Tile({
   extra,
 }: {
   color: string;
-  shape: string;
+  mark: string;
   children: ReactNode;
   dim?: boolean;
   correct?: boolean;
@@ -68,7 +57,7 @@ export function Tile({
   const className = `tile${dim ? " tile-dim" : ""}${onClick ? " tile-button" : ""}`;
   const content = (
     <>
-      <Shape shape={shape} />
+      <Badge mark={mark} />
       <span className="tile-text">{children}</span>
       {correct && <span className="tile-check" aria-label="correct">✓</span>}
       {extra}
