@@ -10,8 +10,8 @@ A small Kahoot-style live quiz. The host writes the questions on the fly, player
 ## Hosting a game
 
 1. Open `/host`, write or paste your questions (an example is prefilled; your draft stays in the browser).
-2. Click **Create game**. Show the screen to the room: players scan the QR code or enter the PIN on the start page.
-3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Click **Next question** to continue.
+2. Pick the game language (English, Deutsch, Français, Italiano or Español) and click **Create game**. The host game screen and the players' phones use that language, including the right-or-wrong buttons (e.g. Richtig / Falsch). Show the screen to the room: players scan the QR code or enter the PIN on the start page.
+3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Players see whether they were right, and after 2 seconds the ranking, until you click **Next question**.
 
 The question config looks like this:
 
@@ -57,6 +57,7 @@ To play from your phone locally, open the host page through your machine's LAN I
 ## How it works
 
 - `lib/quiz.ts`: config parsing and answer checking
+- `lib/i18n.ts`: game screen texts per language
 - `lib/game.ts`: game logic. Only the host rewrites the game state; joins and answers go into Redis hashes with atomic `HSETNX`/`HINCRBY`, so many players answering at once can't overwrite each other. Answer time is measured on the server.
 - `lib/store.ts`: Upstash Redis or in-memory store
 - `app/host/[code]`: host screen (lobby with QR, question, reveal, ranking, podium)

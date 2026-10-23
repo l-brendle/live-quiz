@@ -888,3 +888,46 @@ button {
 .tiles-2 {
   grid-template-columns: 1fr 1fr;
 }
+
+.select {
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  background: #fff;
+  color: var(--text);
+}
+
+.player-board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: pop 0.25s ease-out;
+}
+
+.player-board li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.player-board li.me {
+  background: var(--yellow);
+  color: #fff;
+}
+
+.player-board li.me .lb-rank {
+  background: #fff;
+  color: var(--yellow);
+}

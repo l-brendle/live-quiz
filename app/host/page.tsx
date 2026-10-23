@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { hostTokenKey, post, readStorage, writeStorage } from "@/lib/client";
-import { Quiz, QuizParseError, SAMPLE_CONFIG, parseQuiz } from "@/lib/quiz";
+import { LANGUAGES, Language, Quiz, QuizParseError, SAMPLE_CONFIG, isLanguage, parseQuiz, trueFalseLabel } from "@/lib/quiz";
 
 const DRAFT_KEY = "quiz-draft";
+const LANG_KEY = "quiz-lang";
 
 const TYPE_LABEL = { choice: "Multiple choice", truefalse: "Right or wrong", text: "Free text" } as const;
 
@@ -15,9 +16,14 @@ export default function HostSetup() {
   const [config, setConfig] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lang, setLang] = useState<Language>("en");
 
   // Restore the last config so the host doesn't lose it on reload.
-  useEffect(() => setConfig(readStorage(DRAFT_KEY) ?? SAMPLE_CONFIG), []);
+  useEffect(() => {
+    setConfig(readStorage(DRAFT_KEY) ?? SAMPLE_CONFIG);
+    const savedLang = readStorage(LANG_KEY);
+    if (isLanguage(savedLang)) setLang(savedLang);
+  }, []);
   useEffect(() => {
     if (config !== null) writeStorage(DRAFT_KEY, config);
   }, [config]);
@@ -36,7 +42,7 @@ export default function HostSetup() {
     setBusy(true);
     setError(null);
     try {
-      const { code, hostToken } = await post<{ code: string; hostToken: string }>("/api/games", { config });
+      const { code, hostToken } = await post<{ code: string; hostToken: string }>("/api/games", { config, lang });
       writeStorage(hostTokenKey(code), hostToken);
       router.push(`/host/${code}`);
     } catch (e) {
@@ -63,6 +69,24 @@ export default function HostSetup() {
             onChange={(e) => setConfig(e.target.value)}
             aria-label="Quiz config"
           />
+          <label className="row">
+            <span>Language</span>
+            <select
+              className="select"
+              value={lang}
+              onChange={(e) => {
+                const v = e.target.value as Language;
+                setLang(v);
+                writeStorage(LANG_KEY, v);
+              }}
+            >
+              {Object.entries(LANGUAGES).map(([id, l]) => (
+                <option key={id} value={id}>
+                  {l.name} ({l.true} / {l.false})
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="row">
             <button className="btn btn-primary" disabled={!parsed || "error" in parsed || busy} onClick={create}>
               {busy ? "Creating…" : "Create game"}
@@ -92,7 +116,7 @@ export default function HostSetup() {
                       {q.type === "choice"
                         ? `✓ ${q.options[q.answer]}`
                         : q.type === "truefalse"
-                          ? `✓ ${q.answer ? "True" : "False"}`
+                          ? `✓ ${trueFalseLabel(q.answer, lang)}`
                           : `✓ ${q.answer.join(" / ")}`}
                     </div>
                   </li>
