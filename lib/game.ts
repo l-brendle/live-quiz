@@ -1,4 +1,5 @@
 import { randomBytes, randomInt } from "node:crypto";
+import { t } from "./i18n";
 import { getStore } from "./store";
 import {
   AnswerValue,
@@ -279,23 +280,29 @@ export function leaderboard(
 // ---------------------------------------------------------------------------
 // Player actions
 
+/** What the join screen needs to know before the player has an id. */
+export async function gameInfo(code: string): Promise<{ title: string; lang: Language }> {
+  const state = await loadState(code);
+  return { title: state.quiz.title, lang: state.lang ?? "en" };
+}
+
 export async function joinGame(code: string, rawName: string, existingId?: string): Promise<{ playerId: string; name: string }> {
   const state = await loadState(code);
   const s = store();
   const name = rawName.replace(/\s+/g, " ").trim().slice(0, 20);
-  if (!name) throw new GameError("Please choose a nickname.");
+  if (!name) throw new GameError(t(state.lang).errNickname);
 
   // Re-joining with a known id (e.g. after a page reload) keeps the player.
   if (existingId) {
     const existing = await s.hget<Player>(k.players(code), existingId);
     if (existing) return { playerId: existingId, name: existing.name };
   }
-  if (state.phase === "finished") throw new GameError("This game has already ended.");
+  if (state.phase === "finished") throw new GameError(t(state.lang).errGameEnded);
 
   const playerId = randomBytes(9).toString("base64url");
   const key = normalizeText(name) || name.toLowerCase();
   if (!(await s.hsetnx(k.names(code), key, playerId))) {
-    throw new GameError("That nickname is taken, pick another one.", 409);
+    throw new GameError(t(state.lang).errNameTaken, 409);
   }
   await s.expire(k.names(code), TTL);
   await hsetWithTtl(k.players(code), playerId, { name, joinedAt: Date.now() } satisfies Player);
@@ -306,19 +313,19 @@ export async function submitAnswer(code: string, playerId: string, index: number
   const state = await loadState(code);
   const s = store();
   const now = Date.now();
-  if (state.phase !== "question" || state.index !== index) throw new GameError("This question is no longer open.", 409);
+  if (state.phase !== "question" || state.index !== index) throw new GameError(t(state.lang).errQuestionClosed, 409);
   if (now > state.endsAt + ANSWER_GRACE_MS || (await isClosed(state))) {
-    throw new GameError("Time's up!", 409);
+    throw new GameError(t(state.lang).errTimesUp, 409);
   }
   const question = state.quiz.questions[index];
-  if (!isValidAnswer(question, value)) throw new GameError("Invalid answer.");
-  if (!(await s.hget<Player>(k.players(code), playerId))) throw new GameError("Unknown player, please rejoin.", 401);
+  if (!isValidAnswer(question, value)) throw new GameError(t(state.lang).errInvalidAnswer);
+  if (!(await s.hget<Player>(k.players(code), playerId))) throw new GameError(t(state.lang).errUnknownPlayer, 401);
 
   const ms = Math.max(0, Math.min(now - state.startedAt, question.time * 1000));
   const correct = isCorrect(question, value);
   const answerKey = k.answers(code, index);
   if (!(await s.hsetnx(answerKey, playerId, { value, ms, correct } satisfies Answer))) {
-    throw new GameError("You already answered.", 409);
+    throw new GameError(t(state.lang).errAlreadyAnswered, 409);
   }
   await s.expire(answerKey, TTL);
   if (correct) {
@@ -364,7 +371,7 @@ export async function playerView(code: string, playerId: string): Promise<Player
     isClosed(state),
     inQuestion ? s.hget<Answer>(k.answers(code, state.index), playerId) : Promise.resolve(null),
   ]);
-  if (!me) throw new GameError("You are not part of this game (yet).", 401);
+  if (!me) throw new GameError(t(state.lang).errNotInGame, 401);
   const phase = derivePhase(state, closed, now);
   const question = state.index >= 0 && state.phase !== "finished" ? state.quiz.questions[state.index] : null;
 

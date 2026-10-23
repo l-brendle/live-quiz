@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Countdown, OPTION_STYLES, Spinner, TRUE_FALSE_STYLES, Tile } from "@/components/ui";
 import { ApiError, api, formatSeconds, hostTokenKey, post, readStorage, usePoll, useServerNow } from "@/lib/client";
 import type { HostView, LeaderboardEntry } from "@/lib/game";
+import { type Messages, t } from "@/lib/i18n";
 import { trueFalseLabel } from "@/lib/quiz";
 
 export default function HostGame() {
@@ -25,6 +26,10 @@ export default function HostGame() {
     (d) => (d?.phase === "question" ? 700 : 1200),
   );
   const now = useServerNow(clockOffset);
+  const lang = data?.lang;
+  useEffect(() => {
+    if (lang) document.documentElement.lang = lang;
+  }, [lang]);
 
   const act = async (body: Record<string, unknown>) => {
     if (!token) return;
@@ -57,6 +62,7 @@ export default function HostGame() {
   if (!data) return <Loading />;
 
   const timeUp = data.phase === "question" && now >= data.endsAt;
+  const m = t(data.lang);
 
   return (
     <main className="host">
@@ -64,25 +70,24 @@ export default function HostGame() {
         <span className="logo logo-small">{data.title}</span>
         {data.phase !== "lobby" && data.phase !== "finished" && (
           <span className="pill">
-            Question {data.index + 1} / {data.total}
+            {m.question(data.index + 1, data.total)}
           </span>
         )}
-        <span className="pill">PIN {code}</span>
+        <span className="pill">
+          {m.pin} {code}
+        </span>
         <span className="pill">👤 {data.players.length}</span>
       </header>
 
       {!data.persistent && (
-        <p className="banner">
-          No Redis configured: game state lives in memory. Fine for local testing, but on Vercel connect Upstash Redis
-          (see README).
-        </p>
+<p className="banner">{m.noRedis}</p>
       )}
-      {error && <p className="banner">Connection problem: {error.message}. Retrying…</p>}
+      {error && <p className="banner">{m.connectionProblem(error.message)}</p>}
 
       {data.phase === "lobby" && (
         <section className="lobby">
           <div className="lobby-join card">
-            <p className="muted">Scan to join or go to</p>
+            <p className="muted">{m.scanToJoin}</p>
             <p className="join-url">{joinUrl.replace(/^https?:\/\//, "")}</p>
             {joinUrl && (
               <div className="qr">
@@ -90,14 +95,14 @@ export default function HostGame() {
               </div>
             )}
             <p className="pin">
-              Game PIN: <strong>{code}</strong>
+              {m.gamePin}: <strong>{code}</strong>
             </p>
           </div>
           <div className="lobby-players card stack">
             <div className="row spread">
-              <h2>{data.players.length === 0 ? "Waiting for players…" : `${data.players.length} players`}</h2>
+              <h2>{data.players.length === 0 ? m.waitingForPlayers : m.playerCount(data.players.length)}</h2>
               <button className="btn btn-primary btn-large" disabled={busy} onClick={() => act({ action: "start" })}>
-                Start ▶
+                {m.start} ▶
               </button>
             </div>
             <ul className="chips">
@@ -106,8 +111,8 @@ export default function HostGame() {
                   {p.name}
                   <button
                     className="chip-x"
-                    title={`Remove ${p.name}`}
-                    onClick={() => confirm(`Remove ${p.name}?`) && act({ action: "kick", playerId: p.id })}
+                    title={m.removePlayer(p.name)}
+                    onClick={() => confirm(m.removePlayer(p.name)) && act({ action: "kick", playerId: p.id })}
                   >
                     ×
                   </button>
@@ -128,43 +133,43 @@ export default function HostGame() {
                   <Countdown endsAt={data.endsAt} startedAt={data.startedAt} now={now} />
                   <div className="answer-count">
                     <strong>{data.answerCount}</strong>
-                    <span>/ {data.players.length} answers</span>
+                    <span>{m.answersOf(data.players.length)}</span>
                   </div>
                   <button
                     className="btn btn-ghost"
                     disabled={busy || timeUp}
                     onClick={() => act({ action: "skip", index: data.index })}
                   >
-                    Stop timer
+                    {m.stopTimer}
                   </button>
                 </>
               ) : (
                 <>
                   <div className="answer-count">
                     <strong>{data.reveal?.correctCount ?? 0}</strong>
-                    <span>/ {data.answerCount} correct</span>
+                    <span>{m.correctOf(data.answerCount)}</span>
                   </div>
                   <button
                     className="btn btn-primary btn-large"
                     disabled={busy}
                     onClick={() => act({ action: "next", index: data.index })}
                   >
-                    {data.index + 1 < data.total ? "Next question ▶" : "Final results 🏆"}
+                    {data.index + 1 < data.total ? `${m.nextQuestion} ▶` : `${m.finalResults} 🏆`}
                   </button>
                 </>
               )}
             </div>
-            <HostAnswers data={data} />
+            <HostAnswers data={data} m={m} />
           </div>
           <aside className="game-side stack">
-            <Leaderboard entries={data.leaderboard} limit={10} />
+            <Leaderboard entries={data.leaderboard} limit={10} m={m} />
             {joinUrl && (
               <div className="late-join">
                 <QRCodeSVG value={joinUrl} size={96} marginSize={1} />
                 <span>
-                  Join late?
+                  {m.joinLate}
                   <br />
-                  PIN <strong>{code}</strong>
+                  {m.pin} <strong>{code}</strong>
                 </span>
               </div>
             )}
@@ -174,13 +179,13 @@ export default function HostGame() {
 
       {data.phase === "finished" && (
         <section className="finished stack">
-          <h1>🏆 Final results</h1>
-          <Podium entries={data.leaderboard} />
+          <h1>🏆 {m.finalResults}</h1>
+          <Podium entries={data.leaderboard} m={m} />
           <div className="finished-board">
-            <Leaderboard entries={data.leaderboard} />
+            <Leaderboard entries={data.leaderboard} m={m} />
           </div>
           <Link href="/host" className="btn btn-primary">
-            New quiz
+            {m.newQuiz}
           </Link>
         </section>
       )}
@@ -189,9 +194,9 @@ export default function HostGame() {
         <footer className="host-footer">
           <button
             className="btn btn-ghost btn-small"
-            onClick={() => confirm("End the game now and show final results?") && act({ action: "end" })}
+            onClick={() => confirm(m.endGameConfirm) && act({ action: "end" })}
           >
-            End game
+            {m.endGame}
           </button>
         </footer>
       )}
@@ -199,7 +204,7 @@ export default function HostGame() {
   );
 }
 
-function HostAnswers({ data }: { data: HostView }) {
+function HostAnswers({ data, m }: { data: HostView; m: Messages }) {
   const q = data.question!;
   const reveal = data.reveal;
   if (q.type === "text") {
@@ -207,11 +212,11 @@ function HostAnswers({ data }: { data: HostView }) {
       <div className="text-reveal">
         {reveal ? (
           <>
-            <span className="muted">Correct answer</span>
+            <span className="muted">{m.correctAnswer}</span>
             <strong>{reveal.label}</strong>
           </>
         ) : (
-          <span className="muted">✍️ Players type their answer</span>
+          <span className="muted">✍️ {m.playersType}</span>
         )}
       </div>
     );
@@ -241,12 +246,12 @@ function HostAnswers({ data }: { data: HostView }) {
   );
 }
 
-function Leaderboard({ entries, limit }: { entries: LeaderboardEntry[]; limit?: number }) {
+function Leaderboard({ entries, limit, m }: { entries: LeaderboardEntry[]; limit?: number; m: Messages }) {
   const shown = limit ? entries.slice(0, limit) : entries;
   return (
     <div className="card leaderboard">
-      <h2>Ranking</h2>
-      {entries.length === 0 && <p className="muted">No players yet</p>}
+      <h2>{m.ranking}</h2>
+      {entries.length === 0 && <p className="muted">{m.noPlayersYet}</p>}
       <ol>
         {shown.map((e) => (
           <li key={e.id}>
@@ -258,12 +263,12 @@ function Leaderboard({ entries, limit }: { entries: LeaderboardEntry[]; limit?: 
           </li>
         ))}
       </ol>
-      {limit && entries.length > limit && <p className="muted">+ {entries.length - limit} more</p>}
+      {limit && entries.length > limit && <p className="muted">{m.more(entries.length - limit)}</p>}
     </div>
   );
 }
 
-function Podium({ entries }: { entries: LeaderboardEntry[] }) {
+function Podium({ entries, m }: { entries: LeaderboardEntry[]; m: Messages }) {
   const [first, second, third] = entries;
   const place = (e: LeaderboardEntry | undefined, cls: string, medal: string) =>
     e && (
@@ -271,7 +276,7 @@ function Podium({ entries }: { entries: LeaderboardEntry[] }) {
         <span className="podium-name">{e.name}</span>
         <div className="podium-block">
           <span className="podium-medal">{medal}</span>
-          <span>{e.correct} correct</span>
+          <span>{m.nCorrect(e.correct)}</span>
           {e.correct > 0 && <small>{formatSeconds(e.timeMs)}</small>}
         </div>
       </div>

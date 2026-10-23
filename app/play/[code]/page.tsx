@@ -6,26 +6,42 @@ import { useEffect, useState } from "react";
 import { Countdown, OPTION_STYLES, Shape, Spinner, TRUE_FALSE_STYLES } from "@/components/ui";
 import { ApiError, api, playerIdKey, post, readStorage, usePoll, useServerNow, writeStorage } from "@/lib/client";
 import type { PlayerView } from "@/lib/game";
-import { type AnswerValue, trueFalseLabel } from "@/lib/quiz";
+import { type Messages, t } from "@/lib/i18n";
+import { type AnswerValue, type Language, trueFalseLabel } from "@/lib/quiz";
 
 const BOARD_DELAY_MS = 2000;
 
 export default function Play() {
   const { code } = useParams<{ code: string }>();
   const [playerId, setPlayerId] = useState<string | null | undefined>(undefined);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [wasRemoved, setWasRemoved] = useState(false);
+  // The game's language, known before joining so the join screen is translated.
+  const [info, setInfo] = useState<{ lang: Language } | ApiError | null>(null);
 
   useEffect(() => setPlayerId(readStorage(playerIdKey(code))), [code]);
+  useEffect(() => {
+    api<{ lang: Language }>(`/api/games/${code}`)
+      .then(setInfo)
+      .catch((e) => setInfo(e instanceof ApiError ? e : null));
+  }, [code]);
 
-  if (playerId === undefined) return <Center><Spinner /></Center>;
+  const lang = info && !(info instanceof ApiError) ? info.lang : undefined;
+  const m = t(lang);
+  useEffect(() => {
+    if (lang) document.documentElement.lang = lang;
+  }, [lang]);
+
+  if (info instanceof ApiError && info.status === 404) return <NotFound m={m} />;
+  if (playerId === undefined || (!playerId && info === null)) return <Center><Spinner /></Center>;
   if (!playerId) {
     return (
       <Join
         code={code}
-        notice={notice}
+        m={m}
+        notice={wasRemoved ? m.removed : null}
         onJoined={(id) => {
           writeStorage(playerIdKey(code), id);
-          setNotice(null);
+          setWasRemoved(false);
           setPlayerId(id);
         }}
       />
@@ -36,16 +52,27 @@ export default function Play() {
       key={playerId}
       code={code}
       playerId={playerId}
+      m={m}
       onRemoved={(wasPlaying) => {
         writeStorage(playerIdKey(code), null);
-        setNotice(wasPlaying ? "You were removed from the game." : null);
+        setWasRemoved(wasPlaying);
         setPlayerId(null);
       }}
     />
   );
 }
 
-function Session({ code, playerId, onRemoved }: { code: string; playerId: string; onRemoved: (wasPlaying: boolean) => void }) {
+function Session({
+  code,
+  playerId,
+  m,
+  onRemoved,
+}: {
+  code: string;
+  playerId: string;
+  m: Messages;
+  onRemoved: (wasPlaying: boolean) => void;
+}) {
   const { data, error, clockOffset, refresh } = usePoll<PlayerView>(
     () => api<PlayerView>(`/api/games/${code}/player?pid=${encodeURIComponent(playerId)}`),
     (d) => (d?.phase === "question" ? 700 : 1200),
@@ -57,24 +84,24 @@ function Session({ code, playerId, onRemoved }: { code: string; playerId: string
     if (removed) onRemoved(data !== null);
   }, [removed, data, onRemoved]);
 
-  if (error instanceof ApiError && error.status === 404) {
-    return (
-      <Center>
-        <div className="card stack">
-          <h2>Game not found</h2>
-          <p>{error.message}</p>
-          <Link href="/" className="btn btn-dark">Back</Link>
-        </div>
-      </Center>
-    );
-  }
+  if (error instanceof ApiError && error.status === 404) return <NotFound m={m} />;
   if (!data || removed) {
     return <Center>{error && !removed ? <p className="error">{error.message}</p> : <Spinner />}</Center>;
   }
-  return <Game code={code} playerId={playerId} data={data} clockOffset={clockOffset} refresh={refresh} />;
+  return <Game code={code} playerId={playerId} data={data} m={t(data.lang)} clockOffset={clockOffset} refresh={refresh} />;
 }
 
-function Join({ code, notice, onJoined }: { code: string; notice: string | null; onJoined: (id: string) => void }) {
+function Join({
+  code,
+  m,
+  notice,
+  onJoined,
+}: {
+  code: string;
+  m: Messages;
+  notice: string | null;
+  onJoined: (id: string) => void;
+}) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(notice);
@@ -96,20 +123,22 @@ function Join({ code, notice, onJoined }: { code: string; notice: string | null;
           }
         }}
       >
-        <p className="muted center">Game PIN {code}</p>
+        <p className="muted center">
+          {m.gamePin} {code}
+        </p>
         <input
           className="input input-big"
-          placeholder="Nickname"
+          placeholder={m.nickname}
           value={name}
           maxLength={20}
           autoFocus
           autoComplete="off"
           enterKeyHint="go"
           onChange={(e) => setName(e.target.value)}
-          aria-label="Nickname"
+          aria-label={m.nickname}
         />
         <button className="btn btn-dark" disabled={busy || !name.trim()}>
-          {busy ? "Joining…" : "OK, go!"}
+          {busy ? m.joining : m.okGo}
         </button>
         {error && <p className="error">{error}</p>}
       </form>
@@ -121,12 +150,14 @@ function Game({
   code,
   playerId,
   data,
+  m,
   clockOffset,
   refresh,
 }: {
   code: string;
   playerId: string;
   data: PlayerView;
+  m: Messages;
   clockOffset: number;
   refresh: () => void;
 }) {
@@ -174,10 +205,10 @@ function Game({
   if (data.phase === "lobby") {
     return (
       <Screen header={header}>
-        <h2>You&apos;re in!</h2>
-        <p>See your nickname on screen?</p>
+        <h2>{m.youreIn}</h2>
+        <p>{m.seeNickname}</p>
         <Spinner />
-        <p className="muted">Waiting for the host to start…</p>
+        <p className="muted">{m.waitingForHost}</p>
       </Screen>
     );
   }
@@ -187,12 +218,8 @@ function Game({
     return (
       <Screen header={header}>
         <div className="big-emoji">{s.rank === 1 ? "🥇" : s.rank === 2 ? "🥈" : s.rank === 3 ? "🥉" : "🎉"}</div>
-        <h2>
-          You finished #{s.rank} of {s.players}
-        </h2>
-        <p>
-          {s.correct} of {data.total} correct
-        </p>
+        <h2>{m.finishedRank(s.rank, s.players)}</h2>
+        <p>{m.correctOfTotal(s.correct, data.total)}</p>
         {data.podium && data.podium.length > 0 && (
           <ol className="mini-podium">
             {data.podium.map((e) => (
@@ -203,7 +230,7 @@ function Game({
           </ol>
         )}
         <Link href="/" className="btn btn-dark">
-          Done
+          {m.done}
         </Link>
       </Screen>
     );
@@ -214,7 +241,7 @@ function Game({
     const inTop = data.leaderboard.some((e) => e.id === playerId);
     return (
       <Screen header={header}>
-        <h2>Ranking</h2>
+        <h2>{m.ranking}</h2>
         <ol className="player-board">
           {data.leaderboard.map((e) => (
             <li key={e.id} className={e.id === playerId ? "me" : undefined}>
@@ -226,10 +253,10 @@ function Game({
         </ol>
         {s && !inTop && (
           <p className="standing">
-            You&apos;re <strong>#{s.rank}</strong> of {s.players} · {s.correct} correct
+            {m.standing(s.rank, s.players, s.correct)}
           </p>
         )}
-        <p className="muted">Waiting for the next question…</p>
+        <p className="muted">{m.waitingNext}</p>
       </Screen>
     );
   }
@@ -241,18 +268,18 @@ function Game({
     return (
       <Screen header={header} className={r?.correct ? "result-right" : "result-wrong"}>
         <div className="big-emoji">{r?.correct ? "✅" : didAnswer ? "❌" : "⌛"}</div>
-        <h2>{r?.correct ? "Correct!" : didAnswer ? "Not quite" : "Time's up"}</h2>
+        <h2>{r?.correct ? m.correct : didAnswer ? m.notQuite : m.timesUp}</h2>
         {!r?.correct && r && (
           <p>
-            Answer: <strong>{r.label}</strong>
+            {m.answer} <strong>{r.label}</strong>
           </p>
         )}
         {s && (
           <p className="standing">
-            You&apos;re <strong>#{s.rank}</strong> of {s.players} · {s.correct} correct
+            {m.standing(s.rank, s.players, s.correct)}
           </p>
         )}
-        <p className="muted">Waiting for the next question…</p>
+        <p className="muted">{m.waitingNext}</p>
       </Screen>
     );
   }
@@ -268,8 +295,8 @@ function Game({
       {answered ? (
         <div className="screen-body">
           <Spinner />
-          <h2>Answer locked in</h2>
-          <p className="muted">Let&apos;s see if you got it…</p>
+          <h2>{m.answerLocked}</h2>
+          <p className="muted">{m.letsSee}</p>
           {answerError && <p className="error">{answerError}</p>}
         </div>
       ) : (
@@ -299,7 +326,7 @@ function Game({
               ))}
             </div>
           )}
-          {q.type === "text" && <TextAnswer onSubmit={answer} />}
+          {q.type === "text" && <TextAnswer m={m} onSubmit={answer} />}
           {answerError && <p className="error">{answerError}</p>}
         </div>
       )}
@@ -307,7 +334,7 @@ function Game({
   );
 }
 
-function TextAnswer({ onSubmit }: { onSubmit: (v: string) => void }) {
+function TextAnswer({ m, onSubmit }: { m: Messages; onSubmit: (v: string) => void }) {
   const [value, setValue] = useState("");
   return (
     <form
@@ -319,7 +346,7 @@ function TextAnswer({ onSubmit }: { onSubmit: (v: string) => void }) {
     >
       <input
         className="input input-big"
-        placeholder="Type your answer"
+        placeholder={m.typeAnswer}
         value={value}
         maxLength={200}
         autoFocus
@@ -327,10 +354,10 @@ function TextAnswer({ onSubmit }: { onSubmit: (v: string) => void }) {
         autoCapitalize="off"
         enterKeyHint="send"
         onChange={(e) => setValue(e.target.value)}
-        aria-label="Your answer"
+        aria-label={m.typeAnswer}
       />
       <button className="btn btn-dark" disabled={!value.trim()}>
-        Submit
+        {m.submit}
       </button>
     </form>
   );
@@ -342,6 +369,20 @@ function Screen({ header, children, className }: { header: React.ReactNode; chil
       {header}
       <div className="screen-body">{children}</div>
     </main>
+  );
+}
+
+function NotFound({ m }: { m: Messages }) {
+  return (
+    <Center>
+      <div className="card stack">
+        <h2>{m.gameNotFound}</h2>
+        <p>{m.gameNotFoundHint}</p>
+        <Link href="/" className="btn btn-dark">
+          {m.back}
+        </Link>
+      </div>
+    </Center>
   );
 }
 
