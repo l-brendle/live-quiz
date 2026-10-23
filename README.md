@@ -10,8 +10,8 @@ A small Kahoot-style live quiz. The host writes the questions on the fly, player
 ## Hosting a game
 
 1. Open `/host`, write or paste your questions (an example is prefilled; your draft stays in the browser).
-2. Click **Create game**. Show the screen to the room: players scan the QR code or enter the PIN on the start page.
-3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Click **Next question** to continue.
+2. Pick the game language (it sets the right-or-wrong button labels, e.g. Richtig / Falsch for Deutsch) and click **Create game**. Show the screen to the room: players scan the QR code or enter the PIN on the start page.
+3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Players see whether they were right, and after 2 seconds the ranking, until you click **Next question**.
 
 The question config looks like this:
 

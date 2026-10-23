@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Countdown, OPTION_STYLES, Spinner, TRUE_FALSE_STYLES, Tile } from "@/components/ui";
 import { ApiError, api, formatSeconds, hostTokenKey, post, readStorage, usePoll, useServerNow } from "@/lib/client";
 import type { HostView, LeaderboardEntry } from "@/lib/game";
+import { trueFalseLabel } from "@/lib/quiz";
 
 export default function HostGame() {
   const { code } = useParams<{ code: string }>();
@@ -218,7 +219,7 @@ function HostAnswers({ data }: { data: HostView }) {
   const items =
     q.type === "choice"
       ? q.options.map((label, i) => ({ label, ...OPTION_STYLES[i], value: i as number | boolean }))
-      : TRUE_FALSE_STYLES.map((s, i) => ({ ...s, value: i === 0 }));
+      : TRUE_FALSE_STYLES.map((s, i) => ({ ...s, label: trueFalseLabel(i === 0, data.lang), value: i === 0 }));
   return (
     <div className={`tiles ${q.type === "truefalse" ? "tiles-2" : ""}`}>
       {items.map((it, i) => {

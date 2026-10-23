@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { Countdown, OPTION_STYLES, Shape, Spinner, TRUE_FALSE_STYLES } from "@/components/ui";
 import { ApiError, api, playerIdKey, post, readStorage, usePoll, useServerNow, writeStorage } from "@/lib/client";
 import type { PlayerView } from "@/lib/game";
-import type { AnswerValue } from "@/lib/quiz";
+import { type AnswerValue, trueFalseLabel } from "@/lib/quiz";
+
+const BOARD_DELAY_MS = 2000;
 
 export default function Play() {
   const { code } = useParams<{ code: string }>();
@@ -132,6 +134,16 @@ function Game({
   // Optimistic local answer so the UI locks immediately on tap.
   const [sent, setSent] = useState<{ index: number; value: AnswerValue } | null>(null);
   const [answerError, setAnswerError] = useState<string | null>(null);
+  // Index of the revealed question whose ranking is showing. The ranking
+  // replaces the right/wrong screen 2 s after the reveal and stays until the
+  // host moves on, which changes the phase or index.
+  const [boardFor, setBoardFor] = useState<number | null>(null);
+  const revealIndex = data.phase === "reveal" ? data.index : null;
+  useEffect(() => {
+    if (revealIndex === null) return;
+    const t = setTimeout(() => setBoardFor(revealIndex), BOARD_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [revealIndex]);
 
   const answer = async (value: AnswerValue) => {
     if (sent?.index === data.index) return;
@@ -197,6 +209,31 @@ function Game({
     );
   }
 
+  if (data.phase === "reveal" && boardFor === data.index && data.leaderboard) {
+    const s = data.standing;
+    const inTop = data.leaderboard.some((e) => e.id === playerId);
+    return (
+      <Screen header={header}>
+        <h2>Ranking</h2>
+        <ol className="player-board">
+          {data.leaderboard.map((e) => (
+            <li key={e.id} className={e.id === playerId ? "me" : undefined}>
+              <span className="lb-rank">{e.rank}</span>
+              <span className="lb-name">{e.name}</span>
+              <span className="lb-score">{e.correct} ✓</span>
+            </li>
+          ))}
+        </ol>
+        {s && !inTop && (
+          <p className="standing">
+            You&apos;re <strong>#{s.rank}</strong> of {s.players} · {s.correct} correct
+          </p>
+        )}
+        <p className="muted">Waiting for the next question…</p>
+      </Screen>
+    );
+  }
+
   if (data.phase === "reveal") {
     const r = data.result;
     const s = data.standing;
@@ -257,7 +294,7 @@ function Game({
               {TRUE_FALSE_STYLES.map((s, i) => (
                 <button key={i} className="answer-btn" style={{ background: s.color }} onClick={() => answer(i === 0)}>
                   <Shape shape={s.shape} size={36} />
-                  <span>{s.label}</span>
+                  <span>{trueFalseLabel(i === 0, data.lang)}</span>
                 </button>
               ))}
             </div>

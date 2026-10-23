@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { SAMPLE_CONFIG, isCorrect, parseQuiz } from "./quiz.ts";
+import { SAMPLE_CONFIG, correctAnswerLabel, isCorrect, parseQuiz, trueFalseLabel } from "./quiz.ts";
 
 test("parses the sample config", () => {
   const quiz = parseQuiz(SAMPLE_CONFIG);
@@ -44,4 +44,11 @@ test("free text matching ignores case, accents and punctuation", () => {
   assert.ok(isCorrect(q, "  COLOGNE! "));
   assert.ok(!isCorrect(q, "Berlin"));
   assert.ok(!isCorrect(q, ""));
+});
+
+test("right-or-wrong labels follow the game language", () => {
+  const q = parseQuiz("? Statement\n= true").questions[0];
+  assert.equal(correctAnswerLabel(q, "de"), "Richtig");
+  assert.equal(trueFalseLabel(false, "fr"), "Faux");
+  assert.equal(correctAnswerLabel(q), "True");
 });

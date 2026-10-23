@@ -36,6 +36,26 @@ export type PublicQuestion =
   | { type: "truefalse"; question: string; time: number }
   | { type: "text"; question: string; time: number };
 
+export const LANGUAGES = {
+  en: { name: "English", true: "True", false: "False" },
+  de: { name: "Deutsch", true: "Richtig", false: "Falsch" },
+  fr: { name: "Français", true: "Vrai", false: "Faux" },
+  it: { name: "Italiano", true: "Vero", false: "Falso" },
+  es: { name: "Español", true: "Verdadero", false: "Falso" },
+} as const;
+
+export type Language = keyof typeof LANGUAGES;
+
+export function isLanguage(v: unknown): v is Language {
+  return typeof v === "string" && Object.hasOwn(LANGUAGES, v);
+}
+
+/** Labels for the right-or-wrong buttons in the game's language. */
+export function trueFalseLabel(value: boolean, lang: Language = "en"): string {
+  const l = LANGUAGES[lang] ?? LANGUAGES.en;
+  return value ? l.true : l.false;
+}
+
 export const DEFAULT_TIME = 20;
 export const MAX_QUESTIONS = 100;
 
@@ -278,12 +298,12 @@ export function isValidAnswer(q: Question, value: unknown): value is AnswerValue
 }
 
 /** Human readable correct answer. */
-export function correctAnswerLabel(q: Question): string {
+export function correctAnswerLabel(q: Question, lang: Language = "en"): string {
   switch (q.type) {
     case "choice":
       return q.options[q.answer];
     case "truefalse":
-      return q.answer ? "True" : "False";
+      return trueFalseLabel(q.answer, lang);
     case "text":
       return q.answer[0];
   }

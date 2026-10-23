@@ -11,8 +11,8 @@ export const OPTION_STYLES = [
 
 /** Styles for the two right-or-wrong buttons: [true, false]. */
 export const TRUE_FALSE_STYLES = [
-  { color: "var(--blue)", shape: "diamond", label: "True" },
-  { color: "var(--red)", shape: "triangle", label: "False" },
+  { color: "var(--blue)", shape: "diamond" },
+  { color: "var(--red)", shape: "triangle" },
 ] as const;
 
 export function Shape({ shape, size = 28 }: { shape: string; size?: number }) {
