@@ -1,6 +1,6 @@
 # Live Quiz
 
-A small Kahoot-style live quiz. The host writes the questions on the fly, players scan a QR code, choose a nickname and play on their phones. No accounts, no login.
+A small live quiz for a room full of phones. The host writes the questions on the fly, players scan a QR code, choose a nickname and play on their phones. No accounts, no login.
 
 - **Question types:** multiple choice (2–4 options), right or wrong, free text
 - **Join any time:** the QR code stays on the host screen during the game
@@ -10,7 +10,7 @@ A small Kahoot-style live quiz. The host writes the questions on the fly, player
 ## Hosting a game
 
 1. Open `/host`, write or paste your questions (an example is prefilled; your draft stays in the browser).
-2. Pick the game language (English, Deutsch, Français, Italiano or Español) and click **Create game**. The host game screen and the players' phones use that language, including the right-or-wrong buttons (e.g. Richtig / Falsch). Show the screen to the room: players scan the QR code or enter the PIN on the start page.
+2. Pick the game language (English, Deutsch, Français, Italiano or Español) and click **Create game**. The host game screen and the players' phones use that language, including the right-or-wrong buttons (e.g. Richtig / Falsch). Show the screen to the room: players scan the QR code or enter the game code on the start page.
 3. Click **Start**. Each question closes when the timer runs out or everyone has answered, then the answer and the ranking appear. Players see whether they were right, and after 2 seconds the ranking, until you click **Next question**.
 
 The question config looks like this:
@@ -60,7 +60,7 @@ To play from your phone locally, open the host page through your machine's LAN I
 - `lib/i18n.ts`: game screen texts per language
 - `lib/game.ts`: game logic. Only the host rewrites the game state; joins and answers go into Redis hashes with atomic `HSETNX`/`HINCRBY`, so many players answering at once can't overwrite each other. Answer time is measured on the server.
 - `lib/store.ts`: Upstash Redis or in-memory store
-- `app/host/[code]`: host screen (lobby with QR, question, reveal, ranking, podium)
+- `app/host/[code]`: host screen (waiting room with QR, question, reveal, ranking, podium)
 - `app/play/[code]`: mobile player screen
 
 The host's control token lives in the browser's localStorage, so host from the same browser you created the game in.

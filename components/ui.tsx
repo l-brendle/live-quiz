@@ -3,52 +3,30 @@
 import type { CSSProperties, ReactNode } from "react";
 
 export const OPTION_STYLES = [
-  { color: "var(--red)", shape: "triangle" },
-  { color: "var(--blue)", shape: "diamond" },
-  { color: "var(--yellow)", shape: "circle" },
-  { color: "var(--green)", shape: "square" },
+  { color: "var(--opt-a)", mark: "A" },
+  { color: "var(--opt-b)", mark: "B" },
+  { color: "var(--opt-c)", mark: "C" },
+  { color: "var(--opt-d)", mark: "D" },
 ] as const;
 
 /** Styles for the two right-or-wrong buttons: [true, false]. */
 export const TRUE_FALSE_STYLES = [
-  { color: "var(--blue)", shape: "diamond" },
-  { color: "var(--red)", shape: "triangle" },
+  { color: "var(--opt-d)", mark: "✓" },
+  { color: "var(--opt-b)", mark: "✗" },
 ] as const;
 
-export function Shape({ shape, size = 28 }: { shape: string; size?: number }) {
-  const s = { width: size, height: size, flex: "none" } as CSSProperties;
-  const fill = "#fff";
-  switch (shape) {
-    case "triangle":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <path d="M16 3 30 28H2z" fill={fill} />
-        </svg>
-      );
-    case "diamond":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <path d="M16 1 31 16 16 31 1 16z" fill={fill} />
-        </svg>
-      );
-    case "circle":
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <circle cx="16" cy="16" r="14" fill={fill} />
-        </svg>
-      );
-    default:
-      return (
-        <svg viewBox="0 0 32 32" style={s} aria-hidden>
-          <rect x="3" y="3" width="26" height="26" fill={fill} />
-        </svg>
-      );
-  }
+/** Round badge with the option letter (or check/cross) shown on answer tiles. */
+export function Badge({ mark, size = 40 }: { mark: string; size?: number }) {
+  return (
+    <span className="badge" style={{ width: size, height: size, fontSize: size * 0.5 } as CSSProperties} aria-hidden>
+      {mark}
+    </span>
+  );
 }
 
 export function Tile({
   color,
-  shape,
+  mark,
   children,
   dim,
   correct,
@@ -57,7 +35,7 @@ export function Tile({
   extra,
 }: {
   color: string;
-  shape: string;
+  mark: string;
   children: ReactNode;
   dim?: boolean;
   correct?: boolean;
@@ -68,7 +46,7 @@ export function Tile({
   const className = `tile${dim ? " tile-dim" : ""}${onClick ? " tile-button" : ""}`;
   const content = (
     <>
-      <Shape shape={shape} />
+      <Badge mark={mark} />
       <span className="tile-text">{children}</span>
       {correct && <span className="tile-check" aria-label="correct">✓</span>}
       {extra}

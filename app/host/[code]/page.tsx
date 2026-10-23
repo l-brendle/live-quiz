@@ -233,7 +233,7 @@ function HostAnswers({ data, m }: { data: HostView; m: Messages }) {
           <Tile
             key={i}
             color={it.color}
-            shape={it.shape}
+            mark={it.mark}
             dim={!!reveal && !isRight}
             correct={isRight}
             extra={reveal?.distribution && <span className="tile-count">{reveal.distribution[i]}</span>}
